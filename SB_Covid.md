@@ -52,46 +52,30 @@ foo = ax.set_ylabel('Number of Patients')
 
 ```python
 sbc = pd.merge(sb_icu_cases, sbcases, left_index=True, right_index=True)
-# sbc['COVID-19 Positive Patients'] -= sbc['ICU COVID-19 Positive Patients']
-# sbc['Suspected COVID-19 Positive Patients'] -= sbc['ICU COVID-19 Suspected Patients']
-# sbc['Suspected COVID-19 Positive Patients'] = sbc['Suspected COVID-19 Positive Patients'].where(sbc['Suspected COVID-19 Positive Patients'] >= 0, 0)
+sbc['COVID-19 Positive Patients'] -= sbc['ICU COVID-19 Positive Patients']
+sbc['Suspected COVID-19 Positive Patients'] -= sbc['ICU COVID-19 Suspected Patients']
+sbc['Suspected COVID-19 Positive Patients'] = sbc['Suspected COVID-19 Positive Patients'].where(sbc['Suspected COVID-19 Positive Patients'] >= 0, 0)
 sbc.plot(kind='area', alpha=0.2, figsize=(13,5), title="Hospitalized Covid-19 Patients in SB County")
 ```
 
 ```python
 sbc = pd.merge(sb_icu_cases, sbcases, left_index=True, right_index=True)
 sbc.rename(columns={
-    'COVID-19 Positive Patients': 'Hospital (Tested)',
-    'Suspected COVID-19 Positive Patients': 'Hosptital (Suspected)',
+    'COVID-19 Positive Patients': 'Non-ICU (Tested)',
     'ICU COVID-19 Positive Patients': 'ICU (Tested)',
+    'Suspected COVID-19 Positive Patients': 'Non-ICU (Suspected)',
     'ICU COVID-19 Suspected Patients': 'ICU (Suspected)'
 }, inplace=True)
+sbc['Non-ICU (Tested)'] -= sbc['ICU (Tested)']
+sbc['Non-ICU (Suspected)'] -= sbc['ICU (Suspected)']
 val_cols = sbc.columns
 sbc['Date'] = sbc.index
 sbc = sbc.melt(value_vars=val_cols, id_vars='Date', var_name='Hospitalized Patient Category', value_name='Count')
 ```
 
 ```python
-
-```
-
-```python
-sbc
-```
-
-```python
 fig = px.area(sbc, x='Date', y='Count', color='Hospitalized Patient Category')
 fig.show()
-```
-
-```python
-df = px.data.gapminder()
-fig = px.area(df, x="year", y="pop", color="continent", line_group="country")
-fig.show()
-```
-
-```python
-sbcases.sort_index(ascending=False).head()
 ```
 
 ```python
@@ -243,7 +227,7 @@ foo = plt.legend(loc="upper left")
 ```
 
 ```python
-cdf.sort_index(ascending=False)
+cdf
 ```
 
 ```python
