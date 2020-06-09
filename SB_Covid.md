@@ -51,13 +51,7 @@ ax.legend()
 foo = ax.set_ylabel('Number of Patients')
 ```
 
-```python
-sbc = pd.merge(sb_icu_cases, sbcases, left_index=True, right_index=True)
-sbc['COVID-19 Positive Patients'] -= sbc['ICU COVID-19 Positive Patients']
-sbc['Suspected COVID-19 Positive Patients'] -= sbc['ICU COVID-19 Suspected Patients']
-sbc['Suspected COVID-19 Positive Patients'] = sbc['Suspected COVID-19 Positive Patients'].where(sbc['Suspected COVID-19 Positive Patients'] >= 0, 0)
-sbc.plot(kind='area', alpha=0.2, figsize=(13,5), title="Hospitalized Covid-19 Patients in SB County")
-```
+See the [interactive version](hospitalized_sb.html).
 
 ```python
 sbc = pd.merge(sb_icu_cases, sbcases, left_index=True, right_index=True)
@@ -79,10 +73,8 @@ fig = px.area(sbc, x='Date', y='Count', color='Hospitalized Patient Category', t
 tot = sbc.groupby('Date').sum()
 fig.add_trace(go.Scatter(x=tot.index, y=tot.Count, mode='lines', name='Total', line=dict(dash='dashdot', width=3, color='red')))
 fig.show()
-```
-
-```python
-sbc.groupby('Date').sum()
+import plotly.io as pio
+pio.write_html(fig, file='hospitalized_sb.html')
 ```
 
 ```python
@@ -238,7 +230,7 @@ cdf
 ```
 
 ```python
-
+!jupyter nbconvert SB_Covid.ipynb --to html --output index.html
 ```
 
 ```python
