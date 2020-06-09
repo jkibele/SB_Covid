@@ -20,6 +20,7 @@ import json
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.express as px
+import plotly.graph_objects as go
 ```
 
 ```python
@@ -74,8 +75,14 @@ sbc = sbc.melt(value_vars=val_cols, id_vars='Date', var_name='Hospitalized Patie
 ```
 
 ```python
-fig = px.area(sbc, x='Date', y='Count', color='Hospitalized Patient Category')
+fig = px.area(sbc, x='Date', y='Count', color='Hospitalized Patient Category', title="Hospitalized Covid-19 Patients in SB County")
+tot = sbc.groupby('Date').sum()
+fig.add_trace(go.Scatter(x=tot.index, y=tot.Count, mode='lines', name='Total', line=dict(dash='dashdot', width=3, color='red')))
 fig.show()
+```
+
+```python
+sbc.groupby('Date').sum()
 ```
 
 ```python
