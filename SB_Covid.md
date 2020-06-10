@@ -17,6 +17,7 @@ jupyter:
 import re
 import urllib
 import json
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -33,48 +34,68 @@ df.index = df['Most Recent Date']
 df.index.name = 'Date'
 
 sbdf = df.query("`County Name` == 'Santa Barbara'").sort_index()
+name_map = {
+    'COVID-19 Positive Patients': 'Hospitalized (Confirmed)',
+    'ICU COVID-19 Positive Patients': 'ICU (Confirmed)',
+    'Suspected COVID-19 Positive Patients': 'Hospitalized (Suspected)',
+    'ICU COVID-19 Suspected Patients': 'ICU (Suspected)'
+}
+sbdf.rename(columns=name_map, inplace=True)
+
+sbc = sbdf.copy()
+sbc['Hospitalized (Confirmed)'] -= sbc['ICU (Confirmed)']
+sbc['Hospitalized (Suspected)'] -= sbc['ICU (Suspected)']
+sbc['Date'] = sbc.index
+
+cm = plt.get_cmap('tab20')
+
+def mpl_to_plotly(cmap):
+    colors = ((np.array(c) * 255).astype('int') for c in cm.colors)
+    pl_colorscale = [f'rgb{tuple(color)}' for color in colors]
+    return pl_colorscale
+
+pxtab20 = mpl_to_plotly(cm)
 ```
 
 ```python
-sbdf
-```
 
-```python
-# sbcases = sbdf['COVID-19 Positive Patients'] + sbdf['Suspected COVID-19 Positive Patients']
-sbcases = sbdf[['COVID-19 Positive Patients', 'Suspected COVID-19 Positive Patients']]
-# sb_icu_cases = sbdf['ICU COVID-19 Positive Patients'] + sbdf['ICU COVID-19 Suspected Patients']
-sb_icu_cases = sbdf[['ICU COVID-19 Positive Patients', 'ICU COVID-19 Suspected Patients']]
-ax = sbcases.plot(kind='area', alpha=0.2, label="Total Active Cases", figsize=(13,5), title="Hospitalized Covid-19 Patients in SB County")
-ax = sb_icu_cases.plot(kind='area', alpha=0.2, label="ICU Active Cases", ax=ax)
-ax = sbdf['Total Count Deaths'].plot(color='r', linestyle='--', alpha=0.9, label="Cumulative Deaths")
-ax.legend()
-foo = ax.set_ylabel('Number of Patients')
 ```
 
 See the [interactive version](hospitalized_sb.html).
 
 ```python
-sbc = pd.merge(sb_icu_cases, sbcases, left_index=True, right_index=True)
-sbc.rename(columns={
-    'COVID-19 Positive Patients': 'Non-ICU (Tested)',
-    'ICU COVID-19 Positive Patients': 'ICU (Tested)',
-    'Suspected COVID-19 Positive Patients': 'Non-ICU (Suspected)',
-    'ICU COVID-19 Suspected Patients': 'ICU (Suspected)'
-}, inplace=True)
-sbc['Non-ICU (Tested)'] -= sbc['ICU (Tested)']
-sbc['Non-ICU (Suspected)'] -= sbc['ICU (Suspected)']
-val_cols = sbc.columns
-sbc['Date'] = sbc.index
-sbc = sbc.melt(value_vars=val_cols, id_vars='Date', var_name='Hospitalized Patient Category', value_name='Count')
+cm = plt.get_cmap('tab20')
+
+def mpl_to_plotly(cmap):
+    colors = ((np.array(c) * 255).astype('int') for c in cm.colors)
+    pl_colorscale = [f'rgb{tuple(color)}' for color in colors]
+    return pl_colorscale
+
+pxtab20 = mpl_to_plotly(cm)
 ```
 
 ```python
-fig = px.area(sbc, x='Date', y='Count', color='Hospitalized Patient Category', title="Hospitalized Covid-19 Patients in SB County")
-tot = sbc.groupby('Date').sum()
+sbcm = sbc.melt(value_vars=name_map.values(), id_vars='Date', var_name='Patient Category', value_name='Count')
+pc_order = {
+    'ICU (Confirmed)': '1',
+    'ICU (Suspected)': '2',
+    'Hospitalized (Confirmed)': '3',
+    'Hospitalized (Suspected)': '4'
+}
+sbcm = pd.concat([sbcm.query("`Patient Category`==@cat") for cat in pc_order.keys()])
+fig = px.area(sbcm, x='Date', y='Count', color='Patient Category',
+              title="Hospitalized Covid-19 Patients in SB County", color_discrete_sequence=pxtab20)
+tot = sbcm.groupby('Date').sum()
 fig.add_trace(go.Scatter(x=tot.index, y=tot.Count, mode='lines', name='Total', line=dict(dash='dashdot', width=3, color='red')))
+fig.add_trace(go.Scatter(x=sbdf.index, y=sbdf['Total Count Deaths'], mode='lines', name='Cumulative Deaths', 
+                         line=dict(dash='dash', width=2, color='black')))
 fig.show()
 import plotly.io as pio
 pio.write_html(fig, file='hospitalized_sb.html')
+```
+
+```python
+sbcm.columns
 ```
 
 ```python
@@ -230,7 +251,7 @@ cdf
 ```
 
 ```python
-!jupyter nbconvert SB_Covid.ipynb --to html --output index.html
+!jupyter nbconvert SB_Covid.ipynb --to html --no-input --output index.html
 ```
 
 ```python
