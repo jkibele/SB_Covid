@@ -72,6 +72,7 @@ def mpl_to_plotly(cmap):
     return pl_colorscale
 
 pxtab20 = mpl_to_plotly(cm)
+pxtab10 = mpl_to_plotly(plt.get_cmap('tab10'))
 ```
 
 ```python
@@ -92,10 +93,6 @@ fig.add_trace(go.Scatter(x=sbdf.index, y=sbdf['Total Count Deaths'], mode='lines
 fig.show()
 import plotly.io as pio
 pio.write_html(fig, file='hospitalized_sb.html')
-```
-
-```python
-sbcm.columns
 ```
 
 ```python
@@ -247,7 +244,32 @@ foo = plt.legend(loc="upper left")
 ```
 
 ```python
-cdf
+cdf = communityDF(status_containers).sort_index()
+cdf.index.to_series()
+```
+
+```python
+cdf = communityDF(status_containers)
+cdf['Date'] = cdf.index
+cdf = pd.DataFrame(cdf.to_records(index=False)).sort_values('Date')
+plot_cols = ['Pending Information', 'Recovering at Home', 'Recovering in Hospital', 'Recovering in ICU', 'Date']
+cdfm = cdf[plot_cols].melt(value_vars=['Pending Information', 'Recovering at Home', 'Recovering in Hospital', 'Recovering in ICU'],
+                           id_vars='Date', var_name='Category', value_name='Count')
+cat_order = [
+    'Recovering in ICU',
+    'Recovering in Hospital',
+    'Recovering at Home',
+    'Pending Information'
+]
+cdfm = pd.concat([cdfm.query("`Category`==@cat") for cat in cat_order])
+cdfm.Category.unique()
+```
+
+```python
+fig = px.bar(cdfm, x='Date', y='Count', color='Category', color_discrete_sequence=pxtab10)
+tot = cdfm.query("Category != 'Pending Information'").groupby('Date').sum()
+fig.add_trace(go.Scatter(x=tot.index, y=tot.Count, mode='lines', name='Total Confirmed Cases', line=dict(dash='dashdot', width=3, color='red')))
+fig.show()
 ```
 
 ```python
