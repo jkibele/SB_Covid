@@ -13,6 +13,10 @@ jupyter:
     name: python3
 ---
 
+# Interactive Plots of Covid-19 in Santa Barbara County
+
+As a resident of Santa Barbara County, I'm interested in keeping tabs on levels of Covid-19 infection in my area. Data are available [from the State](https://data.chhs.ca.gov/) and [county](https://publichealthsbc.org/status-reports/). However, I wasn't happy with the format in which the data were presented so I decided to do some visualizations. I'm most interested in tracking the level of current infections and the level on strain on local medical resources. 
+
 ```python
 import re
 import urllib
@@ -57,22 +61,22 @@ def mpl_to_plotly(cmap):
 pxtab20 = mpl_to_plotly(cm)
 ```
 
-```python
+## Data from CA Health and Human Services
 
-```
+These data were downloaded from the [CHHS website](https://data.chhs.ca.gov/). They're downloadable in a consistant format from April onward. I've produced my own visualization that I prefer to the one [available on the CHHS website](https://public.tableau.com/views/COVID-19PublicDashboard/Covid-19Hospitals?:embed=y&:display_count=no&:showVizHome=no). You can also see a [full page version](hospitalized_sb.html).
 
-See the [interactive version](hospitalized_sb.html).
+This plot tracks the number of hospitalized Covid-19 patients in SB County over time, as well as cumulative Covid-19 deaths in SB County. It does not track infected patients who may be recovering at home. Patients designated here as "Confirmed" are those that have tested positive for Covid-19. Those designated as "Suspected" are pending test results. For more information, see the [CHHS website](https://data.chhs.ca.gov/dataset/california-covid-19-hospital-data-and-case-statistics).
 
 ```python
 cm = plt.get_cmap('tab20')
 
-def mpl_to_plotly(cmap):
-    colors = ((np.array(c) * 255).astype('int') for c in cm.colors)
-    pl_colorscale = [f'rgb{tuple(color)}' for color in colors]
+def mpl_to_plotly(cmap, alpha=1.0):
+    colors = ((np.array(c) * 255).astype('int') for c in cmap.colors)
+    pl_colorscale = [f'rgba{tuple(color) + (alpha,)}' for color in colors]
     return pl_colorscale
 
-pxtab20 = mpl_to_plotly(cm)
-pxtab10 = mpl_to_plotly(plt.get_cmap('tab10'))
+pxtab20 = mpl_to_plotly(cm, 0.5)
+pxtab10 = mpl_to_plotly(plt.get_cmap('tab10'), 0.5)
 ```
 
 ```python
@@ -101,9 +105,9 @@ n_dead = sbdf['Total Count Deaths'].max().astype('int')
 print(f"{n_dead} total deaths. {death_per_confirmed:.2f}% case fatality rate as of {sbdf.index.max().strftime('%B %-d, %Y')}.")
 ```
 
-## Scrape
+## Data From SB County Public Health Department
 
-Get the county level data from [here](https://publichealthsbc.org/status-reports/).
+[These data](https://publichealthsbc.org/status-reports/) offer a more detailed look at the current status of Covid-19 in SB County. The numbers are broken down by geographic location, including separating the very large number of cases at the [Lompoc Federal Correctional Institution](https://en.wikipedia.org/wiki/Federal_Correctional_Institution,_Lompoc). However, they are not offered for download in any convenient format (at least, not that I've found) and the formatting on the website has not been consistent. I have written a script to scrape data from the site. It works with the format that was adopted on May 13th, so this data set only goes back that far.
 
 ```python
 from urllib.request import Request, urlopen
@@ -212,43 +216,6 @@ def getTotalConfirmed(soup):
 ```
 
 ```python
-dcdf = getDailyCases(soup).astype('float')
-ax = dcdf.plot.bar(stacked=True, figsize=(13, 6), title='SB County: Daily New Cases by Area')
-foo = ax.set_ylabel('Cases')
-plt.legend(bbox_to_anchor=(1.02, 0.5), loc="center left", borderaxespad=0)
-```
-
-```python
-tcdf = getTotalConfirmed(soup).astype('float')
-ax = tcdf.plot.bar(stacked=True, figsize=(13, 6), title='SB County: Total Confirmed Cases by Area')
-foo = ax.set_ylabel('Cases')
-plt.legend(bbox_to_anchor=(1.02, 0.5), loc="center left", borderaxespad=0)
-```
-
-```python
-ax = tcdf.drop("Federal Prison In Lompoc", axis=1).plot.bar(stacked=True, figsize=(13, 6), title='SB County: Total Confirmed Cases by Area (Excluding Prison)')
-foo = ax.set_ylabel('Cases')
-plt.legend(bbox_to_anchor=(1.02, 0.5), loc="center left", borderaxespad=0)
-```
-
-```python
-cdf = communityDF(status_containers)
-cdf.index = cdf.index.to_series().apply(lambda d: d.date()).apply(lambda d: d.strftime('%b %d'))
-active_cols = [ 'Recovering in Hospital', 'Recovering at Home', 'Pending Information']
-ax = cdf[active_cols].plot.bar(figsize=(13,5), stacked=True, alpha=0.5)
-ax = cdf['Recovering in ICU'].plot.bar(alpha=0.5, ax=ax, legend='Recovering in ICU', color='r', title='Active Covid-19 Cases in Santa Barbara County (Excluding Prison)')
-ax = cdf['Active Cases'].plot(ax=ax, color='red', linestyle='--', label='Total Active Cases')
-# ax = cdf['Active Cases'].diff().plot(ax=ax, color='b', label='Change')
-foo = ax.set_ylabel('Number of Cases')
-foo = plt.legend(loc="upper left")
-```
-
-```python
-cdf = communityDF(status_containers).sort_index()
-cdf.index.to_series()
-```
-
-```python
 cdf = communityDF(status_containers)
 cdf['Date'] = cdf.index
 cdf = pd.DataFrame(cdf.to_records(index=False)).sort_values('Date')
@@ -263,23 +230,43 @@ cat_order = [
 ]
 cdfm = pd.concat([cdfm.query("`Category`==@cat") for cat in cat_order])
 cdfm.Category.unique()
-```
 
-```python
-fig = px.bar(cdfm, x='Date', y='Count', color='Category', color_discrete_sequence=pxtab10)
+fig = px.bar(cdfm, x='Date', y='Count', color='Category', color_discrete_sequence=pxtab10,
+            title="Active Covid-19 Cases in SB County (Excluding Lompoc Prison)")
 tot = cdfm.query("Category != 'Pending Information'").groupby('Date').sum()
 fig.add_trace(go.Scatter(x=tot.index, y=tot.Count, mode='lines', name='Total Confirmed Cases', line=dict(dash='dashdot', width=3, color='red')))
 fig.show()
 ```
 
+### Additional Plots from County Data
+
+These are some additional non-interactive plots based on the SB County data. They explore the geographic break down of Covid-19 cases in SB County. Please note that there are gaps in the x-axis for days where numbers were not reported. On the plot above, these gaps are clearly visible. On the plots below, the gaps in reporting still exist but they are more difficult to see.
+
 ```python
+dcdf = getDailyCases(soup).astype('float')
+ax = dcdf.plot.bar(stacked=True, figsize=(13, 6), title='SB County: Daily New Cases by Area')
+foo = ax.set_ylabel('Cases')
+foo = plt.legend(bbox_to_anchor=(1.02, 0.5), loc="center left", borderaxespad=0)
+```
+
+```python
+tcdf = getTotalConfirmed(soup).astype('float')
+ax = tcdf.plot.bar(stacked=True, figsize=(13, 6), title='SB County: Total Confirmed Cases by Area')
+foo = ax.set_ylabel('Cases')
+foo = plt.legend(bbox_to_anchor=(1.02, 0.5), loc="center left", borderaxespad=0)
+```
+
+```python
+ax = tcdf.drop("Federal Prison In Lompoc", axis=1).plot.bar(stacked=True, figsize=(13, 6), title='SB County: Total Confirmed Cases by Area (Excluding Prison)')
+foo = ax.set_ylabel('Cases')
+foo = plt.legend(bbox_to_anchor=(1.02, 0.5), loc="center left", borderaxespad=0)
+```
+
+# Caveats!
+
+No one is paying me to do this. I do have a PhD, but it's in Marine Science, so I am in no way qualified to give out public health advice. I'm not trying to. I'm not responsible for the quality of the data. I'm just trying to visualize some one else's data set. ...and I did it as quickly as possible, so I may have even done that wrong. Feel free to take a look at [the code I wrote](https://github.com/jkibele/SB_Covid/blob/master/SB_Covid.md) and offer helpful suggestions or just tell me I'm dumb and did stuff wrong.
+
+```python
+%%capture
 !jupyter nbconvert SB_Covid.ipynb --to html --no-input --output index.html
-```
-
-```python
-
-```
-
-```python
-
 ```
