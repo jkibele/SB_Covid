@@ -109,6 +109,8 @@ print(f"{n_dead} total deaths. {death_per_confirmed:.2f}% case fatality rate as 
 
 [These data](https://publichealthsbc.org/status-reports/) offer a more detailed look at the current status of Covid-19 in SB County. The numbers are broken down by geographic location, including separating the very large number of cases at the [Lompoc Federal Correctional Institution](https://en.wikipedia.org/wiki/Federal_Correctional_Institution,_Lompoc). However, they are not offered for download in any convenient format (at least, not that I've found) and the formatting on the website has not been consistent. I have written a script to scrape data from the site. It works with the format that was adopted on May 13th, so this data set only goes back that far.
 
+Full screen version [here](sb_county_active.html).
+
 ```python
 from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
@@ -219,6 +221,7 @@ def getTotalConfirmed(soup):
 cdf = communityDF(status_containers)
 cdf['Date'] = cdf.index
 cdf = pd.DataFrame(cdf.to_records(index=False)).sort_values('Date')
+cdf['Recovering in Hospital'] -= cdf['Recovering in ICU']
 plot_cols = ['Pending Information', 'Recovering at Home', 'Recovering in Hospital', 'Recovering in ICU', 'Date']
 cdfm = cdf[plot_cols].melt(value_vars=['Pending Information', 'Recovering at Home', 'Recovering in Hospital', 'Recovering in ICU'],
                            id_vars='Date', var_name='Category', value_name='Count')
@@ -233,9 +236,13 @@ cdfm.Category.unique()
 
 fig = px.bar(cdfm, x='Date', y='Count', color='Category', color_discrete_sequence=pxtab10,
             title="Active Covid-19 Cases in SB County (Excluding Lompoc Prison)")
-tot = cdfm.query("Category != 'Pending Information'").groupby('Date').sum()
-fig.add_trace(go.Scatter(x=tot.index, y=tot.Count, mode='lines', name='Total Confirmed Cases', line=dict(dash='dashdot', width=3, color='red')))
+# tot = cdfm.query("Category != 'Pending Information'").groupby('Date').sum()
+tot = cdf[['Active Cases', 'Date']]
+tot = tot.set_index('Date')
+fig.add_trace(go.Scatter(x=tot.index, y=tot['Active Cases'], mode='lines', name='Active Cases', line=dict(dash='dashdot', width=3, color='red')))
+# fig.add_trace(go.Scatter(x=tot.index, y=tot.Count, mode='lines', name='Total Confirmed Cases', line=dict(dash='dashdot', width=3, color='red')))
 fig.show()
+pio.write_html(fig, file='sb_county_active.html')
 ```
 
 ### Additional Plots from County Data
@@ -266,7 +273,19 @@ foo = plt.legend(bbox_to_anchor=(1.02, 0.5), loc="center left", borderaxespad=0)
 
 No one is paying me to do this. I do have a PhD, but it's in Marine Science, so I am in no way qualified to give out public health advice. I'm not trying to. I'm not responsible for the quality of the data. I'm just trying to visualize some one else's data set. ...and I did it as quickly as possible, so I may have even done that wrong. Feel free to take a look at [the code I wrote](https://github.com/jkibele/SB_Covid/blob/master/SB_Covid.md) and offer helpful suggestions or just tell me I'm dumb and did stuff wrong.
 
+### State Doesn't Match County
+
+It looks like the numbers from the CHHS don't match the numbers from the SB County Public Health Department. I'm not sure what to say about that. It's possible that I've bodged the data wrangling, but I've checked several times and I think my state numbers match the state website, and my county numbers seem match the county website. So, if I didn't mess it up, I'm guessing there may be problems at the state level aggregating all the county data. ...and I don't blame them. There are 58 counties in CA, so the state is probably getting data reported 60 different ways (see "On Data Quality" below). So, basically, I think the county numbers are probably more reliable. But I'm inluding the state numbers because it's a longer time series.
+
+### On Data Quality
+
+I've noticed a few reported numbers that don't quite add up. For instance, the total "Active Cases" don't always equal the sum of "Recovering at Home" and "Recovering in Hospital". It could be that I'm wrong in assuming those should be equal, but it's also possible that they've been reported incorrectly. Either way, let's cut people some slack. I'm sure the people at the county and state levels are doing the best they can. Managing large data sets is never easy. Doing so during a pandemic has got to be even more difficult.
+
 ```python
 %%capture
 !jupyter nbconvert SB_Covid.ipynb --to html --no-input --output index.html
+```
+
+```python
+
 ```
