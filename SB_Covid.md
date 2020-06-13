@@ -249,10 +249,6 @@ fig.show()
 pio.write_html(fig, file='sb_county_active.html')
 ```
 
-```python
-act_cases.index
-```
-
 ### Additional Plots from County Data
 
 These are some additional non-interactive plots based on the SB County data. They explore the geographic break down of Covid-19 cases in SB County. Please note that there are gaps in the x-axis for days where numbers were not reported. On the plot above, these gaps are clearly visible. On the plots below, the gaps in reporting still exist but they are more difficult to see.
