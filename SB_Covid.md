@@ -328,3 +328,7 @@ I've noticed a few reported numbers that don't quite add up. For instance, the t
 %%capture
 !jupyter nbconvert SB_Covid.ipynb --to html --no-input --output index.html
 ```
+
+```python
+
+```
