@@ -94,8 +94,8 @@ fig = px.area(sbcm, x='Date', y='Count', color='Patient Category',
               title="Hospitalized Covid-19 Patients in SB County", color_discrete_sequence=pxtab20)
 tot = sbcm.groupby('Date').sum()
 fig.add_trace(go.Scatter(x=tot.index, y=tot.Count, mode='lines', name='Total', line=dict(dash='dashdot', width=3, color='red')))
-fig.add_trace(go.Scatter(x=sbdf.index, y=sbdf['Total Count Deaths'], mode='lines', name='Cumulative Deaths', 
-                         line=dict(dash='dash', width=2, color='black')))
+# fig.add_trace(go.Scatter(x=sbdf.index, y=sbdf['Total Count Deaths'], mode='lines', name='Cumulative Deaths', 
+#                          line=dict(dash='dash', width=2, color='black')))
 fig.show()
 import plotly.io as pio
 pio.write_html(fig, file='hospitalized_sb.html')
@@ -221,7 +221,7 @@ def getTotalConfirmed(soup):
 
 ```python
 cdf = communityDF(status_containers)
-cdf['Date'] = cdf.index
+cdf['Date'] = cdf.index.normalize()
 cdf = pd.DataFrame(cdf.to_records(index=False)).sort_values('Date')
 cdf['Recovering in Hospital'] -= cdf['Recovering in ICU']
 plot_cols = ['Pending Information', 'Recovering at Home', 'Recovering in Hospital', 'Recovering in ICU', 'Date']
@@ -239,12 +239,18 @@ cdfm.Category.unique()
 fig = px.bar(cdfm, x='Date', y='Count', color='Category', color_discrete_sequence=pxtab10,
             title="Active Covid-19 Cases in SB County (Excluding Lompoc Prison)")
 # tot = cdfm.query("Category != 'Pending Information'").groupby('Date').sum()
-tot = cdf[['Active Cases', 'Date']]
-tot = tot.set_index('Date')
-fig.add_trace(go.Scatter(x=tot.index, y=tot['Active Cases'], mode='lines', name='Active Cases', line=dict(dash='dashdot', width=3, color='red')))
-# fig.add_trace(go.Scatter(x=tot.index, y=tot.Count, mode='lines', name='Total Confirmed Cases', line=dict(dash='dashdot', width=3, color='red')))
+act_cases = cdf[['Active Cases', 'Date']]
+act_cases = act_cases.set_index('Date')
+fig.add_trace(go.Scatter(x=act_cases.index, y=act_cases['Active Cases'], mode='lines', name='Active Cases', line=dict(dash='dashdot', width=3, color='red')))
+# min_day = cdf.Date.min()
+# st_tot = tot.query("index >= @min_day")
+# fig.add_trace(go.Scatter(x=st_tot.index, y=st_tot.Count, mode='lines', name='Total Covid Patients According to CHHS', line=dict(dash='dashdot', width=3, color='gray')))
 fig.show()
 pio.write_html(fig, file='sb_county_active.html')
+```
+
+```python
+act_cases.index
 ```
 
 ### Additional Plots from County Data
@@ -279,6 +285,41 @@ No one is paying me to do this. I do have a PhD, but it's in Marine Science, so 
 
 It looks like the numbers from the CHHS don't match the numbers from the SB County Public Health Department. I'm not sure what to say about that. It's possible that I've bodged the data wrangling, but I've checked several times and I think my state numbers match the state website, and my county numbers seem match the county website. So, if I didn't mess it up, I'm guessing there may be problems at the state level aggregating all the county data. ...and I don't blame them. There are 58 counties in CA, so the state is probably getting data reported 60 different ways (see "On Data Quality" below). So, basically, I think the county numbers are probably more reliable. But I'm inluding the state numbers because it's a longer time series.
 
+Here's a plot that shows the dicrepancy:
+
+```python
+sbcm = sbc.melt(value_vars=name_map.values(), id_vars='Date', var_name='Patient Category', value_name='Count')
+pc_order = {
+    'ICU (Confirmed)': '1',
+    'ICU (Suspected)': '2',
+    'Hospitalized (Confirmed)': '3',
+    'Hospitalized (Suspected)': '4'
+}
+sbcm = pd.concat([sbcm.query("`Patient Category`==@cat") for cat in pc_order.keys()])
+fig = px.area(sbcm, x='Date', y='Count', color='Patient Category',
+              title="Comparison of Hospitalized Patient Counts from CHHS and SB County", color_discrete_sequence=mpl_to_plotly(cm, 0.1))
+tot = sbcm.groupby('Date').sum()
+fig.add_trace(go.Scatter(x=tot.index, y=tot.Count, mode='lines', name='Total Hospitalized (SB County Data)', line=dict(width=1, color='gray')))
+for i, cat in enumerate(cdfm.Category.unique()):
+    df = cdfm.query("Category == @cat")
+    fig.add_trace(
+        go.Bar(
+            x=df.Date, 
+            y=df.Count, 
+            marker_color=pxtab10[i],
+            name=cat
+        )
+    )
+fig.update_layout(
+    barmode='stack',
+    xaxis=dict(
+        range=[cdfm.Date.min(), cdfm.Date.max()]
+    )
+)
+
+fig.show()
+```
+
 ### On Data Quality
 
 I've noticed a few reported numbers that don't quite add up. For instance, the total "Active Cases" don't always equal the sum of "Recovering at Home" and "Recovering in Hospital". It could be that I'm wrong in assuming those should be equal, but it's also possible that they've been reported incorrectly. Either way, let's cut people some slack. I'm sure the people at the county and state levels are doing the best they can. Managing large data sets is never easy. Doing so during a pandemic has got to be even more difficult.
@@ -286,8 +327,4 @@ I've noticed a few reported numbers that don't quite add up. For instance, the t
 ```python
 %%capture
 !jupyter nbconvert SB_Covid.ipynb --to html --no-input --output index.html
-```
-
-```python
-
 ```
