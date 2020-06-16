@@ -251,7 +251,7 @@ pio.write_html(fig, file='sb_county_active.html')
 
 ### Additional Plots from County Data
 
-These are some additional non-interactive plots based on the SB County data. They explore the geographic break down of Covid-19 cases in SB County. Please note that there are gaps in the x-axis for days where numbers were not reported. On the plot above, these gaps are clearly visible. On the plots below, the gaps in reporting still exist but they are more difficult to see.
+These are some additional non-interactive plots and one interactive plot based on the SB County data. They explore the geographic break down of Covid-19 cases in SB County. Please note that there are gaps in the x-axis for days where numbers were not reported. On the plot above, these gaps are clearly visible. On the plots below, the gaps in reporting still exist but they are more difficult to see.
 
 ```python
 dcdf = getDailyCases(soup).astype('float')
@@ -271,6 +271,47 @@ foo = plt.legend(bbox_to_anchor=(1.02, 0.5), loc="center left", borderaxespad=0)
 ax = tcdf.drop("Federal Prison In Lompoc", axis=1).plot.bar(stacked=True, figsize=(13, 6), title='SB County: Total Confirmed Cases by Area (Excluding Prison)')
 foo = ax.set_ylabel('Cases')
 foo = plt.legend(bbox_to_anchor=(1.02, 0.5), loc="center left", borderaxespad=0)
+```
+
+```python
+tclong = tcdf.drop('Federal Prison In Lompoc', axis=1).copy()
+tclong.rename(
+    {'Unincorporated Area Of The Goleta Valley And Gaviota': 'Unincorporated Goleta/Gaviota'},
+    axis='columns', inplace=True
+)
+tclong.columns = [c.rstrip() for c in tclong.columns]
+tclong.index = tclong.index.normalize()
+tclong = tclong.reset_index().melt(id_vars='Date', value_name='Count', var_name='Geographic Area')
+tclong.Count = tclong.Count.astype('int')
+tclong['Day of the Year'] = tclong.Date.apply(lambda d: d.dayofyear)
+tclong.sort_values(['Date', 'Geographic Area'], inplace=True)
+# tclong.head()
+```
+
+```python
+fig = px.scatter(
+    tclong, x='Day of the Year', y='Count', 
+    color='Geographic Area', 
+#     trendline='lowess',
+    height=800, #width=800,
+)
+# results = px.get_trendline_results(fig)
+# fig.show()
+```
+
+```python
+fig = px.scatter(
+    tclong, x='Date', y='Count', 
+    facet_col='Geographic Area', 
+    facet_col_wrap=4, height=800,
+#     width=1000,
+    title='Cumulative Reported Covid-19 Cases',
+#     trendline='ols', log_y=True
+)
+# fig.update_layout(yaxis_type='log')
+fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+# fig.update_yaxes(matches='y', showticklabels=True)
+fig.show()
 ```
 
 # Caveats!
@@ -309,7 +350,7 @@ for i, cat in enumerate(cdfm.Category.unique()):
 fig.update_layout(
     barmode='stack',
     xaxis=dict(
-        range=[cdfm.Date.min(), cdfm.Date.max()]
+        range=[cdfm.Date.min(), max(cdfm.Date.max(), sbcm.Date.max())]
     )
 )
 
