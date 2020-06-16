@@ -299,6 +299,8 @@ fig = px.scatter(
 # fig.show()
 ```
 
+Full screen facet plot available [here](sb_county_cumulative_facet.html).
+
 ```python
 fig = px.scatter(
     tclong, x='Date', y='Count', 
@@ -312,6 +314,7 @@ fig = px.scatter(
 fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
 # fig.update_yaxes(matches='y', showticklabels=True)
 fig.show()
+pio.write_html(fig, file='sb_county_cumulative_facet.html')
 ```
 
 # Caveats!
