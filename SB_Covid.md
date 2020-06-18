@@ -318,6 +318,9 @@ fig.show()
 pio.write_html(fig, file='sb_county_cumulative_facet.html')
 ```
 
+Things look kind of nuts in Santa Maria, so I went out on a limb and [made a simple model](SM_model_page.html).
+
+
 # Caveats!
 
 No one is paying me to do this. I do have a PhD, but it's in Marine Science, so I am in no way qualified to give out public health advice. I'm not trying to. I'm not responsible for the quality of the data. I'm just trying to visualize some one else's data set. ...and I did it as quickly as possible, so I may have even done that wrong. Feel free to take a look at [the code I wrote](https://github.com/jkibele/SB_Covid) and offer helpful suggestions or just tell me I'm dumb and did stuff wrong.
@@ -368,6 +371,7 @@ I've noticed a few reported numbers that don't quite add up. For instance, the t
 ```python
 %%capture
 !jupyter nbconvert SB_Covid.ipynb --to html --no-input --output index.html
+!jupyter nbconvert SantaMariaModel.ipynb --to html --no-input --output SM_model_page.html
 ```
 
 ```python
