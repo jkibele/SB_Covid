@@ -22,6 +22,7 @@ from matplotlib import pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
+from IPython.display import display, Markdown, Latex
 ```
 
 # Santa Maria Prediction
@@ -45,11 +46,6 @@ df.rename({'City Of Santa Maria': 'Count'}, axis='columns', inplace=True)
 
 ```python
 df.reset_index(inplace=True)
-```
-
-```python
-x = df['Day of the Year'].values
-y = df['Count'].values
 ```
 
 ```python
@@ -88,6 +84,21 @@ def predict_and_extend(df, n_days_forward=120):
     )
     model = model.set_index('Day of the Year').join(df.set_index('Day of the Year'))
     return model, pcov
+```
+
+```python
+x = df['Day of the Year'].values
+y = df['Count'].values
+A, B, pcov = easy_curve_fit(x, y)
+```
+
+```python
+growth_rate = 100*(np.exp(B) - 1)
+double_days = np.log(2) / B
+
+Markdown(
+    f"The modeled growth rate is {growth_rate:.2}%. At that rate, cases will double every {double_days:.1f} days."
+)
 ```
 
 ```python
