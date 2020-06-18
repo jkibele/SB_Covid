@@ -285,6 +285,7 @@ tclong = tclong.reset_index().melt(id_vars='Date', value_name='Count', var_name=
 tclong.Count = tclong.Count.astype('int')
 tclong['Day of the Year'] = tclong.Date.apply(lambda d: d.dayofyear)
 tclong.sort_values(['Date', 'Geographic Area'], inplace=True)
+tclong.to_pickle('tclong.pickle')
 # tclong.head()
 ```
 
