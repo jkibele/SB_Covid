@@ -303,8 +303,19 @@ fig = px.scatter(
 Full screen facet plot available [here](sb_county_cumulative_facet.html).
 
 ```python
+changes = {}
+for gname, grp in tclong.set_index('Date', drop=False).sort_index().groupby('Geographic Area'):
+    ser = grp.Count.pct_change(periods=3, fill_method='ffill') * 100
+    changes.update({gname: ser})
+chdf = pd.DataFrame(changes)
+chdf = chdf.reset_index().melt(value_name='Change (3 day %)', var_name='Geographic Area', id_vars='Date')
+with_change = pd.merge(tclong, chdf, how='left', left_on=['Geographic Area', 'Date'], right_on=['Geographic Area', 'Date'])
+```
+
+```python
 fig = px.scatter(
-    tclong, x='Date', y='Count', 
+    with_change, x='Date', y='Count', color='Change (3 day %)',
+    range_color=[0, 30], color_continuous_scale=px.colors.sequential.Viridis,
     facet_col='Geographic Area', 
     facet_col_wrap=4, height=800,
 #     width=1000,

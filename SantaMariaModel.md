@@ -117,3 +117,7 @@ fig.update_layout(title='Actual and Modeled Covid-19 Cases in Santa Maria, CA',
 pio.write_html(fig, 'SM_model.html')
 fig.show()
 ```
+
+```python
+
+```
