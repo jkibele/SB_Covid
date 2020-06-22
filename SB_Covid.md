@@ -289,17 +289,6 @@ tclong.to_pickle('tclong.pickle')
 # tclong.head()
 ```
 
-```python
-fig = px.scatter(
-    tclong, x='Day of the Year', y='Count', 
-    color='Geographic Area', 
-#     trendline='lowess',
-    height=800, #width=800,
-)
-# results = px.get_trendline_results(fig)
-# fig.show()
-```
-
 Full screen facet plot available [here](sb_county_cumulative_facet.html).
 
 ```python

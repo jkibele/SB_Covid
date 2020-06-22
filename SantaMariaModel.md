@@ -83,22 +83,8 @@ def predict_and_extend(df, n_days_forward=120):
         }
     )
     model = model.set_index('Day of the Year').join(df.set_index('Day of the Year'))
+    model['Date'] = pd.to_datetime(model.index.to_series().apply(lambda i: '2020 ' + str(i)), format='%Y %j')
     return model, pcov
-```
-
-```python
-x = df['Day of the Year'].values
-y = df['Count'].values
-A, B, pcov = easy_curve_fit(x, y)
-```
-
-```python
-growth_rate = 100*(np.exp(B) - 1)
-double_days = np.log(2) / B
-
-Markdown(
-    f"The modeled growth rate is {growth_rate:.2}%. At that rate, cases will double every {double_days:.1f} days."
-)
 ```
 
 ```python
@@ -116,6 +102,46 @@ fig.update_layout(title='Actual and Modeled Covid-19 Cases in Santa Maria, CA',
                    yaxis_title='Count')
 pio.write_html(fig, 'SM_model.html')
 fig.show()
+```
+
+```python
+x = df['Day of the Year'].values
+y = df['Count'].values
+A, B, pcov = easy_curve_fit(x, y)
+
+growth_rate = 100*(np.exp(B) - 1)
+double_days = np.log(2) / B
+
+Markdown(
+    f"The modeled growth rate in Santa Maria is {growth_rate:.2}% daily. At that rate, cases will double every {double_days:.1f} days."
+)
+```
+
+## Just for the heck of it
+
+I've "modeled" the other geographic areas. Some of these look very dubious. I need to look at the covariance matrices to see how good these fits are, and I need to calculate some measures of uncertainty. This is a work in progress, and these plots are little more than wild speculation at the moment.
+
+```python
+df_list = []
+for ga in tclong['Geographic Area'].unique():
+    gadf = tclong.query("`Geographic Area` == @ga").sort_values('Date')
+    moddf, pcov = predict_and_extend(gadf, 60)
+    moddf['Change (3 day)'] = moddf.Count.pct_change(periods=3) * 100
+    moddf['Geographic Area'] = ga
+    df_list.append(moddf)
+    fig = go.Figure() #px.scatter(mod, x='Date', y='Count', labels='Confirmed Cases')
+    fig.add_trace(go.Scatter(
+        x=moddf.Date, y=moddf.Count,
+        mode='markers', name='Positive Tests'))
+    fig.add_trace(go.Scatter(
+        x=moddf.Date, y=moddf['Modeled Count'], 
+        mode='lines', name='Modeled', line=dict(width=1, color='gray')))
+    fig.update_layout(title=f'Actual and Modeled Covid-19 Cases in {ga}, CA',
+                       xaxis_title='Date',
+                       yaxis_title='Count')
+    fig.show()
+allmod = pd.concat(df_list)
+allmod['Geographic Area'].dropna(inplace=True)
 ```
 
 ```python
