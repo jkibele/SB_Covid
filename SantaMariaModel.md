@@ -88,7 +88,12 @@ def predict_and_extend(df, n_days_forward=120):
 ```
 
 ```python
+df[df['Day of the Year'] <= 170].tail()
+```
+
+```python
 mod, pcov = predict_and_extend(df, 60)
+imod, ipcov = predict_and_extend(df[df['Day of the Year'] <= 170], 60)
 mod['Date'] = pd.to_datetime(mod.index.to_series().apply(lambda i: '2020 ' + str(i)), format='%Y %j')
 fig = go.Figure() #px.scatter(mod, x='Date', y='Count', labels='Confirmed Cases')
 fig.add_trace(go.Scatter(
@@ -97,6 +102,9 @@ fig.add_trace(go.Scatter(
 fig.add_trace(go.Scatter(
     x=mod.Date, y=mod['Modeled Count'], 
     mode='lines', name='Modeled', line=dict(width=1, color='gray')))
+fig.add_trace(go.Scatter(
+    x=imod.Date, y=imod['Modeled Count'], 
+    mode='lines', name='June 18th Model', line=dict(dash='dashdot', width=1, color='red')))
 fig.update_layout(title='Actual and Modeled Covid-19 Cases in Santa Maria, CA',
                    xaxis_title='Date',
                    yaxis_title='Count')
@@ -120,10 +128,6 @@ Markdown(
 ## Just for the heck of it
 
 I've "modeled" the other geographic areas. Some of these look very dubious. I need to look at the covariance matrices to see how good these fits are, and I need to calculate some measures of uncertainty. This is a work in progress, and these plots are little more than wild speculation at the moment.
-
-```python
-moddf
-```
 
 ```python
 df_list = []
