@@ -130,7 +130,8 @@ df_list = []
 for ga in tclong['Geographic Area'].unique():
     gadf = tclong.query("`Geographic Area` == @ga").sort_values('Date')
     moddf, pcov = predict_and_extend(gadf, 60)
-    moddf['Change (3 day)'] = moddf.Count.pct_change(periods=3) * 100
+    # Interpolate if you want to do change.
+#     moddf['Change (3 day)'] = moddf.Count.pct_change(periods=3) * 100
     moddf['Geographic Area'] = ga
     df_list.append(moddf)
     fig = go.Figure() #px.scatter(mod, x='Date', y='Count', labels='Confirmed Cases')

@@ -292,10 +292,19 @@ tclong.to_pickle('tclong.pickle')
 Full screen facet plot available [here](sb_county_cumulative_facet.html).
 
 ```python
+def grp_interp(grp):
+    grp = grp.reindex(pd.date_range(tclong.Date.min(), tclong.Date.max()))
+    grp.Count = grp.Count.interpolate()
+    grp['Day of the Year'] = grp['Day of the Year'].interpolate()
+    grp.Date = grp.index.to_series()
+    grp['Geographic Area'] = grp['Geographic Area'].fillna(method='ffill')
+    return grp
+
 changes = {}
 for gname, grp in tclong.set_index('Date', drop=False).sort_index().groupby('Geographic Area'):
-    ser = grp.Count.pct_change(periods=3, fill_method='ffill') * 100
-    changes.update({gname: ser})
+    idx = grp.index
+    ser = grp_interp(grp).Count.pct_change(periods=3) * 100
+    changes.update({gname: ser[idx]})
 chdf = pd.DataFrame(changes)
 chdf = chdf.reset_index().melt(value_name='Change (3 day %)', var_name='Geographic Area', id_vars='Date')
 with_change = pd.merge(tclong, chdf, how='left', left_on=['Geographic Area', 'Date'], right_on=['Geographic Area', 'Date'])
