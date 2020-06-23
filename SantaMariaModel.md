@@ -88,10 +88,6 @@ def predict_and_extend(df, n_days_forward=120):
 ```
 
 ```python
-df[df['Day of the Year'] <= 170].tail()
-```
-
-```python
 mod, pcov = predict_and_extend(df, 60)
 imod, ipcov = predict_and_extend(df[df['Day of the Year'] <= 170], 60)
 mod['Date'] = pd.to_datetime(mod.index.to_series().apply(lambda i: '2020 ' + str(i)), format='%Y %j')
