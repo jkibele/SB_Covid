@@ -122,6 +122,10 @@ Markdown(
 I've "modeled" the other geographic areas. Some of these look very dubious. I need to look at the covariance matrices to see how good these fits are, and I need to calculate some measures of uncertainty. This is a work in progress, and these plots are little more than wild speculation at the moment.
 
 ```python
+moddf
+```
+
+```python
 df_list = []
 for ga in tclong['Geographic Area'].unique():
     gadf = tclong.query("`Geographic Area` == @ga").sort_values('Date')
@@ -132,13 +136,26 @@ for ga in tclong['Geographic Area'].unique():
     fig = go.Figure() #px.scatter(mod, x='Date', y='Count', labels='Confirmed Cases')
     fig.add_trace(go.Scatter(
         x=moddf.Date, y=moddf.Count,
-        mode='markers', name='Positive Tests'))
+        mode='markers', name='Positive Tests',
+#         marker=dict(
+#              color=moddf['Change (3 day)'],
+#             colorscale='Viridis', # one of plotly colorscales
+#             showscale=True,
+#             cmin=0,
+#             cmax=30,
+#             colorbar=dict(yanchor='top',
+#                          len=0.8,
+#                          title="3 Day % Change")
+#         ),
+        ))
+#     
     fig.add_trace(go.Scatter(
         x=moddf.Date, y=moddf['Modeled Count'], 
         mode='lines', name='Modeled', line=dict(width=1, color='gray')))
     fig.update_layout(title=f'Actual and Modeled Covid-19 Cases in {ga}, CA',
                        xaxis_title='Date',
                        yaxis_title='Count')
+    
     fig.show()
 allmod = pd.concat(df_list)
 allmod['Geographic Area'].dropna(inplace=True)
