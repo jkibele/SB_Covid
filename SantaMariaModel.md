@@ -131,23 +131,23 @@ for ga in tclong['Geographic Area'].unique():
     gadf = tclong.query("`Geographic Area` == @ga").sort_values('Date')
     moddf, pcov = predict_and_extend(gadf, 60)
     # Interpolate if you want to do change.
-#     moddf['Change (3 day)'] = moddf.Count.pct_change(periods=3) * 100
+    moddf['Change (3 day)'] = moddf.Count.interpolate().pct_change(periods=3) * 100
     moddf['Geographic Area'] = ga
     df_list.append(moddf)
     fig = go.Figure() #px.scatter(mod, x='Date', y='Count', labels='Confirmed Cases')
     fig.add_trace(go.Scatter(
-        x=moddf.Date, y=moddf.Count,
+        x=moddf.Date, y=moddf.Count, hovertext=moddf['Change (3 day)'].apply(lambda pct: f'{pct:.1f}% in 3 days'),
         mode='markers', name='Positive Tests',
-#         marker=dict(
-#              color=moddf['Change (3 day)'],
-#             colorscale='Viridis', # one of plotly colorscales
-#             showscale=True,
-#             cmin=0,
-#             cmax=30,
-#             colorbar=dict(yanchor='top',
-#                          len=0.8,
-#                          title="3 Day % Change")
-#         ),
+        marker=dict(
+             color=moddf['Change (3 day)'],
+            colorscale='Viridis', # one of plotly colorscales
+            showscale=True,
+            cmin=0,
+            cmax=30,
+            colorbar=dict(#yanchor='top',
+                         len=0.7,
+                         title="3 Day % Change")
+        ),
         ))
 #     
     fig.add_trace(go.Scatter(
