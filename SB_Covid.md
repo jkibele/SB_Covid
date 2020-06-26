@@ -28,23 +28,33 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
+from io import StringIO
 ```
 
 ```python
-url = 'https://data.chhs.ca.gov/api/3/action/datastore_search?resource_id=6cd8d424-dfaa-4bdd-9410-a3d656e1176e&limit=50000'  
-fileobj = json.loads(urllib.request.urlopen(url).read())['result']
+# url = 'https://data.chhs.ca.gov/api/3/action/datastore_search?resource_id=6cd8d424-dfaa-4bdd-9410-a3d656e1176e&limit=50000'  
+url = 'https://data.ca.gov/dataset/590188d5-8545-4c93-a9a0-e230f0db7290/resource/926fd08f-cc91-4828-af38-bd45de97f8c3/download/statewide_cases.csv'
+csv = urllib.request.urlopen(url).read()
+df = pd.read_csv(url)
+df.DATE = pd.to_datetime(df.DATE)
+```
 
-df = pd.DataFrame(fileobj['records'])
-df['Most Recent Date'] = pd.to_datetime(df['Most Recent Date'])
-df.index = df['Most Recent Date']
-df.index.name = 'Date'
+```python
+url = 'https://data.ca.gov/dataset/529ac907-6ba1-4cb7-9aae-8966fc96aeef/resource/42d33765-20fd-44b8-a978-b083b7542225/download/hospitals_by_county.csv'
+hdf = pd.read_csv(url)
+hdf['Date'] = pd.to_datetime(hdf.todays_date)
+```
 
-sbdf = df.query("`County Name` == 'Santa Barbara'").sort_index()
+```python
+hdf.index = hdf.Date
+hdf.index.name = 'Date'
+
+sbdf = hdf.query("county == 'Santa Barbara'").sort_index()
 name_map = {
-    'COVID-19 Positive Patients': 'Hospitalized (Confirmed)',
-    'ICU COVID-19 Positive Patients': 'ICU (Confirmed)',
-    'Suspected COVID-19 Positive Patients': 'Hospitalized (Suspected)',
-    'ICU COVID-19 Suspected Patients': 'ICU (Suspected)'
+    'hospitalized_covid_confirmed_patients': 'Hospitalized (Confirmed)',
+    'icu_covid_confirmed_patients': 'ICU (Confirmed)',
+    'hospitalized_suspected_covid_patients': 'Hospitalized (Suspected)',
+    'icu_suspected_covid_patients': 'ICU (Suspected)'
 }
 sbdf.rename(columns=name_map, inplace=True)
 
@@ -102,9 +112,9 @@ pio.write_html(fig, file='hospitalized_sb.html')
 ```
 
 ```python
-death_per_confirmed = (sbdf['Total Count Deaths'].max() / sbdf['Total Count Confirmed'].max()) * 100
-n_dead = sbdf['Total Count Deaths'].max().astype('int')
-print(f"{n_dead} total deaths. {death_per_confirmed:.2f}% case fatality rate as of {sbdf.index.max().strftime('%B %-d, %Y')}.")
+# death_per_confirmed = (sbdf['Total Count Deaths'].max() / sbdf['Total Count Confirmed'].max()) * 100
+# n_dead = sbdf['Total Count Deaths'].max().astype('int')
+# print(f"{n_dead} total deaths. {death_per_confirmed:.2f}% case fatality rate as of {sbdf.index.max().strftime('%B %-d, %Y')}.")
 ```
 
 ## Data From SB County Public Health Department
