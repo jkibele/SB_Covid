@@ -36,7 +36,7 @@ from io import StringIO
 url = 'https://data.ca.gov/dataset/590188d5-8545-4c93-a9a0-e230f0db7290/resource/926fd08f-cc91-4828-af38-bd45de97f8c3/download/statewide_cases.csv'
 csv = urllib.request.urlopen(url).read()
 df = pd.read_csv(url)
-df.DATE = pd.to_datetime(df.DATE)
+# df.DATE = pd.to_datetime(df.DATE)
 ```
 
 ```python
@@ -123,6 +123,8 @@ pio.write_html(fig, file='hospitalized_sb.html')
 
 Full screen version [here](sb_county_active.html).
 
+...and now SB county has decided to stop reporting how many active cases are recovering at home. ...right as cases are taking off. Okay. Great.
+
 ```python
 from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
@@ -150,10 +152,13 @@ def getDataframe(stat_con):
     date = getDate(stat_con)
     tab_html = getTable(stat_con)
     df = pd.read_html(str(tab_html), header=0, index_col=0)[0]
-    df = df.apply(lambda s: s.replace('—', '0')).apply(pd.to_numeric)
-    df['Date'] = date
-    df['Category'] = df.index.to_series()
-    df.set_index('Date', inplace=True, drop=False)
+    try:
+        df = df.apply(lambda s: s.replace('—', '0')).apply(pd.to_numeric)
+        df['Date'] = date
+        df['Category'] = df.index.to_series()
+        df.set_index('Date', inplace=True, drop=False)
+    except ValueError:
+        df = pd.DataFrame()
     return df
 
 def communityDF(stat_con_list):
