@@ -163,5 +163,5 @@ allmod['Geographic Area'].dropna(inplace=True)
 ```
 
 ```python
-
+# allmod.groupby('Date').sum()['Modeled Count'].plot()
 ```
