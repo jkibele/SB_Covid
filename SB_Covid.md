@@ -396,11 +396,5 @@ fig.show()
 I've noticed a few reported numbers that don't quite add up. For instance, the total "Active Cases" don't always equal the sum of "Recovering at Home" and "Recovering in Hospital". It could be that I'm wrong in assuming those should be equal, but it's also possible that they've been reported incorrectly. Either way, let's cut people some slack. I'm sure the people at the county and state levels are doing the best they can. Managing large data sets is never easy. Doing so during a pandemic has got to be even more difficult.
 
 ```python
-%%capture
-!jupyter nbconvert SB_Covid.ipynb --to html --no-input --output index.html
-!jupyter nbconvert SantaMariaModel.ipynb --to html --no-input --output SM_model_page.html
-```
-
-```python
 
 ```
