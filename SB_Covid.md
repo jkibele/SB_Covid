@@ -151,7 +151,10 @@ def getTable(stat_con):
 def getDataframe(stat_con):
     date = getDate(stat_con)
     tab_html = getTable(stat_con)
-    df = pd.read_html(str(tab_html), header=0, index_col=0)[0]
+    try:
+        df = pd.read_html(str(tab_html), header=0, index_col=0)[0]
+    except ValueError:
+        df = pd.DataFrame()
     try:
         df = df.apply(lambda s: s.replace('—', '0')).apply(pd.to_numeric)
         df['Date'] = date
